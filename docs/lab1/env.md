@@ -16,7 +16,7 @@
 | 3 | import bench | OK | імпортується |
 | 4 | .env існує | OK | поруч із pyproject.toml; шаблон — .env.example |
 | 5 | хмарний ключ | FIX | GEMINI_API_KEY: не задано · OPENROUTER_API_KEY: не задано · OPENROUTER_MODEL: не задано |
-| 6 | локальний сервер і модель | FIX | Ollama (http://localhost:11434/v1) · помилка URLError |
-| 7 | контекст ≥ 16384 | FIX | LOCAL_NUM_CTX=16384 · OLLAMA_CONTEXT_LENGTH=не задано |
-| 8 | канарка контексту | — | запустіть з --live |
-| 9 | хмарний виклик | — | запустіть з --live |
+| 6 | локальний сервер і модель | OK | Ollama (http://localhost:11434/v1) · qwen3:4b: є серед 1 |
+| 7 | контекст ≥ 16384 | OK | LOCAL_NUM_CTX=16384 · OLLAMA_CONTEXT_LENGTH=16384 |
+| 8 | канарка контексту | OK | prompt_tokens=7510 · відповідь: Хорошо, давайте разберемся с э |
+| 9 | хмарний виклик | FIX | немає хмарного ключа |
