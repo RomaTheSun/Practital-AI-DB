@@ -1,0 +1,23 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.15"
+
+      # Ключів у CI немає: тести не ходять у мережу
+      - name: Install the project
+        run: uv sync --locked
+
+      - name: Run tests
+        run: uv run pytest

@@ -1,0 +1,9 @@
+# Python
+.venv/
+*.py[cod]
+*.egg-info/
+
+# Лабораторна 1: секрети й службові теки
+.env
+__pycache__/
+.pytest_cache/

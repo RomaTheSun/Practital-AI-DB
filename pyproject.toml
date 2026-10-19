@@ -1,0 +1,31 @@
+[project]
+name = "bench"
+version = "0.1.0"
+description = "Reproducible LLM benchmark for Laboratory 1"
+readme = "README.md"
+authors = [
+    { name = "nickoomss", email = "nickooms4@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "google-genai>=2.31.0",
+    "openai>=3.35.1",
+    "pydantic>=2.14.1",
+    "python-dotenv>=1.2.4",
+    "tiktoken>=0.14.0",
+]
+
+[project.scripts]
+bench = "bench:main"
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
