@@ -108,7 +108,9 @@ def main() -> int:
     env = os.environ.get
     base_url = (env("LOCAL_BASE_URL") or "http://localhost:11434/v1").rstrip("/")
     model = env("LOCAL_MODEL") or "qwen3:4b"
-    engine = {11434: "Ollama", 1234: "LM Studio"}.get(urlparse(base_url).port, "невідомо")
+    engine = {11434: "Ollama", 11435: "Ollama (ізольований)", 1234: "LM Studio"}.get(
+        urlparse(base_url).port, "невідомо"
+    )
     ctx = {key: int(env(key)) if (env(key) or "").isdigit() else 0 for key in ("LOCAL_NUM_CTX", "OLLAMA_CONTEXT_LENGTH")}
     rows: list[tuple[str, str, str, bool]] = []
 

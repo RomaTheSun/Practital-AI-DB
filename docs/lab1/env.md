@@ -1,10 +1,10 @@
 # Середовище стенду
 
-- Дата: 2026-10-19
+- Дата: 2026-10-22
 - ОС: macOS-26.5.2-x86_64-i386-64bit-Mach-O
 - Python: 3.13.0
 - RAM: 16.0 ГБ
-- Локальний рушій: Ollama (http://localhost:11434/v1)
+- Локальний рушій: Ollama (ізольований) (http://127.0.0.1:11435/v1)
 - Модель: qwen3:4b
 - Контекст: 16384
 - SDK: openai 3.35.1 · google-genai 2.31.0 · pydantic 2.14.1 · tiktoken 0.14.0 · python-dotenv 1.2.4
@@ -15,8 +15,8 @@
 | 2 | git у PATH | OK | git version 2.33.0 |
 | 3 | import bench | OK | імпортується |
 | 4 | .env існує | OK | поруч із pyproject.toml; шаблон — .env.example |
-| 5 | хмарний ключ | FIX | GEMINI_API_KEY: не задано · OPENROUTER_API_KEY: не задано · OPENROUTER_MODEL: не задано |
-| 6 | локальний сервер і модель | OK | Ollama (http://localhost:11434/v1) · qwen3:4b: є серед 1 |
+| 5 | хмарний ключ | OK | GEMINI_API_KEY: задано · OPENROUTER_API_KEY: не задано · OPENROUTER_MODEL: не задано |
+| 6 | локальний сервер і модель | OK | Ollama (ізольований) (http://127.0.0.1:11435/v1) · qwen3:4b: є серед 1 |
 | 7 | контекст ≥ 16384 | OK | LOCAL_NUM_CTX=16384 · OLLAMA_CONTEXT_LENGTH=16384 |
 | 8 | канарка контексту | OK | prompt_tokens=7510 · відповідь: Хорошо, давайте разберемся с э |
-| 9 | хмарний виклик | FIX | немає хмарного ключа |
+| 9 | хмарний виклик | OK | gemini-3.8-flash: Так · повтор після тимчасового HTTP 503 |
