@@ -1,0 +1,10 @@
+{"id":"p01","ua":"Транзакція має атомарно створити замовлення та зарезервувати товар.","en":"The transaction must atomically create the order and reserve the product."}
+{"id":"p02","ua":"Зовнішній ключ гарантує, що кожен платіж належить наявному користувачу.","en":"A foreign key ensures that every payment belongs to an existing user."}
+{"id":"p03","ua":"Каталог товарів часто читається як один документ із вкладеними характеристиками.","en":"The product catalog is often read as one document with nested attributes."}
+{"id":"p04","ua":"Кеш зберігає результат запиту лише протягом шістдесяти секунд.","en":"The cache stores the query result for only sixty seconds."}
+{"id":"p05","ua":"Лічильник запитів повинен швидко відхиляти перевищення встановленої квоти.","en":"The request counter must quickly reject usage above the configured quota."}
+{"id":"p06","ua":"Графова база знаходить найкоротший шлях між двома користувачами.","en":"The graph database finds the shortest path between two users."}
+{"id":"p07","ua":"Схема звернення підтримки змінюється залежно від продукту та каналу.","en":"The support ticket schema changes depending on the product and channel."}
+{"id":"p08","ua":"Регуляторний звіт об'єднує платежі, договори та історію клієнта.","en":"The regulatory report joins payments, contracts, and the customer history."}
+{"id":"p09","ua":"Тимчасовий ключ автоматично видаляється після завершення строку дії.","en":"The temporary key is automatically deleted after its expiration time."}
+{"id":"p10","ua":"Рекурсивний обхід повертає всіх підлеглих у багаторівневій організації.","en":"The recursive traversal returns all subordinates in a multi-level organization."}
