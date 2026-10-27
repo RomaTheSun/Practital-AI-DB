@@ -25,7 +25,10 @@ def chat(alias: str, messages: list[dict], **params) -> dict:
     spec = models.get(alias)
     if spec.api != "openai_chat":
         raise ValueError(f"clients v1 підтримує лише openai_chat, а {alias} — {spec.api}")
-    merged = {key: value for key, value in {**spec.params, **params}.items() if value is not None}
+    defaults = {**spec.params}
+    if spec.num_ctx is not None:
+        defaults["num_ctx"] = spec.num_ctx
+    merged = {key: value for key, value in {**defaults, **params}.items() if value is not None}
     standard = {key: value for key, value in merged.items() if key in STANDARD}
     extra = {key: value for key, value in merged.items() if key not in STANDARD}
     start = time.perf_counter()

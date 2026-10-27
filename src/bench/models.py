@@ -1,4 +1,4 @@
-"""Реєстр моделей v1 (крок 02): псевдонім → форма API, ID моделі, ключ і параметри."""
+"""Реєстр моделей v1 (крок 03): умови відтворюваного експерименту."""
 import os
 from dataclasses import dataclass, field, replace
 
@@ -31,7 +31,12 @@ MODELS: dict[str, ModelSpec] = {
         key_env=None,
         api_key_default="ollama",
         num_ctx=16384,
-        params={"temperature": 0, "seed": 7, "reasoning_effort": "none"},
+        params={"temperature": 0, "seed": 7, "reasoning_effort": "high", "max_tokens": 4096},
+        caps={"tools": True, "json_schema": True, "reasoning_control": True},
+        price_src="локальна модель",
+        price_date="2026-10-27",
+        free_tier=True,
+        trains_on_data=False,
     ),
     "gemini": ModelSpec(
         alias="gemini",
@@ -40,13 +45,13 @@ MODELS: dict[str, ModelSpec] = {
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
         key_env="GEMINI_API_KEY",
         params={"reasoning_effort": "low"},
-    ),
-    "openrouter": ModelSpec(
-        alias="openrouter",
-        api="openai_chat",
-        model="",
-        base_url="https://openrouter.ai/api/v1",
-        key_env="OPENROUTER_API_KEY",
+        caps={"tools": True, "json_schema": True, "reasoning_control": True},
+        price_in=0.75,
+        price_out=3.75,
+        price_src="https://ai.google.dev/gemini-api/docs/pricing",
+        price_date="2026-10-10",
+        free_tier=True,
+        trains_on_data=True,
     ),
 }
 
@@ -64,6 +69,4 @@ def get(alias: str) -> ModelSpec:
             base_url=env("LOCAL_BASE_URL") or spec.base_url,
             num_ctx=int(env("LOCAL_NUM_CTX") or spec.num_ctx),
         )
-    elif alias == "openrouter":
-        spec = replace(spec, model=env("OPENROUTER_MODEL") or spec.model)
     return spec

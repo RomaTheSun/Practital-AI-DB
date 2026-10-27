@@ -1,4 +1,4 @@
-"""Генерує стабільні Markdown-таблиці кроку 02 з results/*.jsonl."""
+"""Генерує стабільні Markdown-таблиці кроків 02–03 з results/*.jsonl."""
 import argparse
 import glob
 import json
@@ -162,10 +162,52 @@ def block_reasoning(_prices: dict) -> str:
     ) if table else NO_DATA
 
 
+def block_ablation(prices: dict) -> str:
+    groups = by_file(load_rows("results/03-*.jsonl"))
+    return acc_table(groups, prices) if groups else NO_DATA
+
+
+def block_flips(_prices: dict) -> str:
+    groups = by_file(load_rows("results/03-*.jsonl"))
+    ok = {
+        (group[0]["alias"], group[0]["prompt_version"]): latest_ok(group)
+        for group in groups.values()
+    }
+    table = []
+    for (alias, version), rows in sorted(ok.items()):
+        base = ok.get((alias, "v0"))
+        if base is None or version == "v0":
+            continue
+        common = sorted(set(base) & set(rows))
+        fixed = sum(not base[identifier]["correct"] and rows[identifier]["correct"] for identifier in common)
+        broken = sum(base[identifier]["correct"] and not rows[identifier]["correct"] for identifier in common)
+        table.append([alias, f"v0 → {version}", len(common), fixed, broken])
+    return md_table(
+        ["модель", "порівняння", "спільних id", "стали правильними", "стали хибними"], table
+    ) if table else NO_DATA
+
+
+def block_injection(_prices: dict) -> str:
+    table = []
+    for name, rows in by_file(load_rows("results/03-*.jsonl")).items():
+        for row in latest_ok(rows).values():
+            if "injection" not in row["tags"]:
+                continue
+            output = " ".join((row.get("output_raw") or "").split())
+            if len(output) > 80:
+                output = output[:77] + "…"
+            table.append([row["id"], name, output or "—", "так" if row["correct"] else "ні"])
+    table.sort(key=lambda item: (item[0], item[1]))
+    return md_table(["id", "файл", "початок output_raw", "правильно"], table) if table else NO_DATA
+
+
 BLOCKS = {
     "tokens": ("docs/lab1/basics.md", block_tokens),
     "sampling": ("docs/lab1/basics.md", block_sampling),
     "reasoning": ("docs/lab1/basics.md", block_reasoning),
+    "ablation": ("docs/lab1/prompts.md", block_ablation),
+    "injection": ("docs/lab1/prompts.md", block_injection),
+    "flips": ("docs/lab1/prompts.md", block_flips),
 }
 
 
