@@ -22,7 +22,8 @@ def _client(spec: models.ModelSpec) -> OpenAI:
             base_url=spec.base_url,
             api_key=key,
             max_retries=0,
-            timeout=300.0,
+            # Gemini 3.8 Flash з reasoning=low у вимірюваннях відповідав до 8 хв.
+            timeout=900.0,
         )
     return _clients[spec.alias]
 
