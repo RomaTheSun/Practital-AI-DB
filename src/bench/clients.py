@@ -16,7 +16,14 @@ def _client(spec: models.ModelSpec) -> OpenAI:
         key = os.environ.get(spec.key_env or "") or spec.api_key_default
         if not key:
             raise RuntimeError(f"задайте {spec.key_env} у .env")
-        _clients[spec.alias] = OpenAI(base_url=spec.base_url, api_key=key)
+        # Повтори контролює bench.run: приховані SDK-retry можуть витрачати квоту
+        # і тримати один приклад без рядка результату десятки хвилин.
+        _clients[spec.alias] = OpenAI(
+            base_url=spec.base_url,
+            api_key=key,
+            max_retries=0,
+            timeout=300.0,
+        )
     return _clients[spec.alias]
 
 
