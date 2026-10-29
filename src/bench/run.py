@@ -32,7 +32,11 @@ def with_retries(call, attempts: int = 5):
             return call(), None
         except Exception as exc:  # noqa: BLE001
             kind = error_type(exc)
-            if kind not in RETRYABLE or index == attempts:
+            detail = str(exc).lower()
+            daily_quota = kind == "rate_limit" and (
+                "per day limit exceeded" in detail or "daily" in detail
+            )
+            if kind not in RETRYABLE or index == attempts or daily_quota:
                 message = f"{type(exc).__name__}: {exc}"[:500]
                 for name, value in os.environ.items():
                     if name.endswith("_API_KEY") and value:
