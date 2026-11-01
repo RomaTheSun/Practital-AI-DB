@@ -41,7 +41,7 @@ def with_retries(call, attempts: int = 5):
                 for name, value in os.environ.items():
                     if name.endswith("_API_KEY") and value:
                         message = message.replace(value, "***")
-                return None, (kind, message)
+                return None, (kind, message, daily_quota)
             time.sleep(min(60, 2**index) + random.uniform(0, 1))
 
 
@@ -142,6 +142,9 @@ def main(argv: list[str] | None = None) -> None:
         data.append_row(out, row)
         attempts[example.id] += 1
         print(f"  {example.id}: {row['error_type'] or ('правильно' if row['correct'] else 'хибно')}")
+        if error and len(error) > 2 and error[2]:
+            print("  добову квоту вичерпано — прогін зупинено; продовжте з --resume після скидання")
+            break
         if args.max_rpm:
             time.sleep(60 / args.max_rpm)
 
