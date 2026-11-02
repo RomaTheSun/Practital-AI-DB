@@ -76,3 +76,23 @@ def test_daily_quota_is_not_retried(tmp_path, monkeypatch):
     assert calls == 1
     assert len(rows(out)) == 1
     assert rows(out)[0]["error_type"] == "rate_limit"
+
+
+def test_retry_attempts_one_avoids_hidden_server_retries(tmp_path, monkeypatch):
+    class Unavailable(Exception):
+        status_code = 503
+
+    calls = 0
+
+    def failing(alias, messages, **params):
+        nonlocal calls
+        calls += 1
+        raise Unavailable("model is currently experiencing high demand")
+
+    data_path, prompt_path = make_files(tmp_path)
+    monkeypatch.setattr(clients, "chat", failing)
+    out = tmp_path / "03.jsonl"
+    run.main(["--prompt", prompt_path, "--model", "local", "--data", data_path,
+              "--ids", "t01", "--out", str(out), "--retry-attempts", "1"])
+    assert calls == 1
+    assert rows(out)[0]["error_type"] == "server"

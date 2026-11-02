@@ -83,6 +83,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--out")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--max-rpm", type=float)
+    parser.add_argument(
+        "--retry-attempts",
+        type=int,
+        default=5,
+        help="кількість транспортних спроб на приклад (для малої квоти варто 1)",
+    )
     parser.add_argument("--run-id")
     return parser.parse_args(argv)
 
@@ -133,7 +139,9 @@ def main(argv: list[str] | None = None) -> None:
             tags=example.tags,
             attempt=attempts[example.id] + 1,
         )
-        result, error = with_retries(lambda: clients.chat(spec.alias, messages))
+        result, error = with_retries(
+            lambda: clients.chat(spec.alias, messages), attempts=max(1, args.retry_attempts)
+        )
         row["ts"] = data.utc_now()
         if error:
             row.update(error_type=error[0], error=error[1])
