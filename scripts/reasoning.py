@@ -15,11 +15,11 @@ SYSTEM = (
 )
 
 
-def reasoning_text(out: dict) -> str:
+def reasoning_text(turn: clients.Turn) -> str:
     """Дістає текст міркування з полів сервера або тегів think."""
-    message = out["raw"]["choices"][0]["message"]
+    message = turn.raw_assistant_message
     field = message.get("reasoning_content") or message.get("reasoning") or ""
-    return field + "".join(re.findall(r"<think>(.*?)</think>", out["text"] or "", flags=re.S))
+    return field + "".join(re.findall(r"<think>(.*?)</think>", turn.text or "", flags=re.S))
 
 
 def choose_examples(examples: list[data.Example], limit: int) -> list[data.Example]:
@@ -50,10 +50,10 @@ def main() -> None:
     for level in args.levels.split(","):
         for example in chosen:
             messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": example.input}]
-            out = clients.chat(spec.alias, messages, max_tokens=args.max_tokens, reasoning_effort=level)
-            raw = out["text"] or ""
+            turn = clients.chat(spec.alias, messages, max_tokens=args.max_tokens, reasoning_effort=level)
+            raw = turn.text or ""
             parsed = score.parse_output(raw)
-            usage = out["usage"]
+            usage = turn.usage
             params = {
                 **spec.params,
                 "reasoning_effort": level,
@@ -70,7 +70,7 @@ def main() -> None:
                     alias=spec.alias,
                     api=spec.api,
                     model_requested=spec.model,
-                    model_reported=out["model_reported"],
+                    model_reported=turn.model_reported,
                     params=params,
                     mode="reasoning",
                     id=example.id,
@@ -80,18 +80,21 @@ def main() -> None:
                     parsed=parsed,
                     schema_valid=parsed is not None,
                     correct=score.is_correct(example.expected, parsed),
-                    finish_reason=out["finish_reason"],
-                    input_tokens=usage["input"],
-                    output_tokens=usage["output"],
-                    reasoning_tokens=usage["reasoning"],
-                    cached_tokens=usage["cached"],
-                    latency_ms=out["latency_ms"],
+                    finish_reason=turn.finish_reason,
+                    input_tokens=usage.input,
+                    output_tokens=usage.output,
+                    reasoning_tokens=usage.reasoning,
+                    cached_tokens=usage.cached,
+                    latency_ms=turn.latency_ms,
                     attempt=1,
                     concurrency=1,
-                    reasoning_chars=len(reasoning_text(out)),
+                    reasoning_chars=len(reasoning_text(turn)),
                 ),
             )
-            print(f"{level} · {example.id}: correct={score.is_correct(example.expected, parsed)} · out={usage['output']} · {out['finish_reason']}")
+            print(
+                f"{level} · {example.id}: correct={score.is_correct(example.expected, parsed)} "
+                f"· out={usage.output} · {turn.finish_reason}"
+            )
 
 
 if __name__ == "__main__":

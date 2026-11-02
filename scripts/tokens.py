@@ -12,7 +12,7 @@ from bench import clients, data, models
 def model_counter(alias: str):
     """Лічильник токенів локальної моделі з відніманням chat-базової лінії."""
     def usage_input(text: str) -> int:
-        usage = clients.chat(alias, [{"role": "user", "content": text}], max_tokens=1)["usage"]["input"]
+        usage = clients.chat(alias, [{"role": "user", "content": text}], max_tokens=1).usage.input
         if usage is None:
             raise RuntimeError("сервер не повернув prompt_tokens")
         return usage

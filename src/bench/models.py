@@ -22,6 +22,14 @@ class ModelSpec:
     trains_on_data: bool | None = None
 
 
+GEMINI_PRICE = dict(
+    price_in=0.75,
+    price_out=3.75,
+    price_src="https://ai.google.dev/gemini-api/docs/pricing",
+    price_date="2026-10-10",
+)
+
+
 MODELS: dict[str, ModelSpec] = {
     "local": ModelSpec(
         alias="local",
@@ -46,12 +54,21 @@ MODELS: dict[str, ModelSpec] = {
         key_env="GEMINI_API_KEY",
         params={"reasoning_effort": "low"},
         caps={"tools": True, "json_schema": True, "reasoning_control": True},
-        price_in=0.75,
-        price_out=3.75,
-        price_src="https://ai.google.dev/gemini-api/docs/pricing",
-        price_date="2026-10-10",
         free_tier=True,
         trains_on_data=True,
+        **GEMINI_PRICE,
+    ),
+    "gemini-native": ModelSpec(
+        alias="gemini-native",
+        api="gemini_native",
+        model="gemini-3.8-flash",
+        base_url=None,
+        key_env="GEMINI_API_KEY",
+        params={"thinking_level": "low"},
+        caps={"tools": True, "json_schema": True, "reasoning_control": True},
+        free_tier=True,
+        trains_on_data=True,
+        **GEMINI_PRICE,
     ),
 }
 

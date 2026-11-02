@@ -14,10 +14,20 @@ def make_files(tmp_path: Path) -> tuple[str, str]:
     return str(data_path), str(prompt_path)
 
 
-def fake_chat(alias, messages, **params):
-    return {"text": '{"label": "postgresql"}', "finish_reason": "stop", "latency_ms": 12,
-            "usage": {"input": 100, "output": 5, "reasoning": None, "cached": None},
-            "model_reported": "fake-model", "raw": {}}
+def fake_chat(alias, messages, schema=None, **params):
+    text = '{"label": "postgresql"}'
+    parsed = schema.model_validate_json(text) if schema else None
+    return clients.Turn(
+        text=text,
+        parsed=parsed,
+        schema_valid=True if schema else None,
+        tool_calls=[],
+        usage=clients.Usage(input=100, output=5),
+        finish_reason="stop",
+        latency_ms=12,
+        model_reported="fake-model",
+        raw_assistant_message={"role": "assistant", "content": text},
+    )
 
 
 def rows(path):
@@ -96,3 +106,16 @@ def test_retry_attempts_one_avoids_hidden_server_retries(tmp_path, monkeypatch):
               "--ids", "t01", "--out", str(out), "--retry-attempts", "1"])
     assert calls == 1
     assert rows(out)[0]["error_type"] == "server"
+
+
+def test_modes_a_and_b_validate_same_schema(tmp_path, monkeypatch):
+    data_path, prompt_path = make_files(tmp_path)
+    monkeypatch.setattr(clients, "chat", fake_chat)
+    for mode in ("A", "B"):
+        out = tmp_path / f"04-{mode}.jsonl"
+        run.main(["--prompt", prompt_path, "--model", "local", "--data", data_path,
+                  "--ids", "t01", "--mode", mode, "--out", str(out)])
+        row = rows(out)[0]
+        assert row["schema_valid"] is True
+        assert row["parsed"] == {"label": "postgresql"}
+        assert row["correct"] is True

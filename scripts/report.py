@@ -201,6 +201,48 @@ def block_injection(_prices: dict) -> str:
     return md_table(["id", "файл", "початок output_raw", "правильно"], table) if table else NO_DATA
 
 
+def block_structured(_prices: dict) -> str:
+    table = []
+    for name, rows in by_file(load_rows("results/04-*.jsonl")).items():
+        ok = list(latest_ok(rows).values())
+        n = len(ok)
+        valid = sum(bool(row["schema_valid"]) for row in ok)
+        correct = sum(bool(row["correct"]) for row in ok)
+        valid_wrong = sum(bool(row["schema_valid"]) and not row["correct"] for row in ok)
+        finish = ", ".join(
+            f"{reason} {count}"
+            for reason, count in sorted(Counter(str(row["finish_reason"]) for row in ok).items())
+        )
+        output_tokens = (
+            round(statistics.mean(row["output_tokens"] or 0 for row in ok)) if ok else "—"
+        )
+        table.append([
+            name,
+            rows[0]["api"],
+            rows[0]["mode"],
+            n,
+            frac(valid, n),
+            frac(correct, n),
+            frac(valid_wrong, n),
+            finish,
+            output_tokens,
+            error_summary(rows),
+        ])
+    headers = [
+        "файл",
+        "api",
+        "режим",
+        "n",
+        "валідні",
+        "правильні",
+        "валідно, але хибно",
+        "finish_reason",
+        "вихідних токенів (сер.)",
+        "помилки",
+    ]
+    return md_table(headers, table) if table else NO_DATA
+
+
 BLOCKS = {
     "tokens": ("docs/lab1/basics.md", block_tokens),
     "sampling": ("docs/lab1/basics.md", block_sampling),
@@ -208,6 +250,7 @@ BLOCKS = {
     "ablation": ("docs/lab1/prompts.md", block_ablation),
     "injection": ("docs/lab1/prompts.md", block_injection),
     "flips": ("docs/lab1/prompts.md", block_flips),
+    "structured": ("docs/lab1/structured.md", block_structured),
 }
 
 

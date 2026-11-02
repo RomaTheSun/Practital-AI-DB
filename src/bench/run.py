@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
+from pydantic import ValidationError
 
-from bench import clients, data, models, prompts, score
+from bench import clients, data, models, prompts, schema, score
 
 RETRYABLE = {"rate_limit", "server", "timeout"}
 
@@ -45,26 +46,42 @@ def with_retries(call, attempts: int = 5):
             time.sleep(min(60, 2**index) + random.uniform(0, 1))
 
 
-def evaluate(example: data.Example, text: str | None) -> tuple[object, bool]:
-    parsed = score.parse_output(text or "")
-    return parsed, parsed is not None and score.is_correct(example.expected, parsed)
+def evaluate(
+    example: data.Example, turn: clients.Turn, mode: str | None
+) -> tuple[object, bool | None, bool]:
+    """Повертає (parsed, schema_valid, correct) для кроків 03–04."""
+    if mode == "B":
+        parsed = turn.parsed.model_dump() if turn.parsed else None
+        valid = turn.schema_valid
+    elif mode == "A":
+        try:
+            parsed = schema.StorageLabel.model_validate_json(
+                score.clean(turn.text or "")
+            ).model_dump()
+            valid = True
+        except ValidationError:
+            parsed, valid = None, False
+    else:
+        parsed, valid = score.parse_output(turn.text or ""), None
+    correct = parsed is not None and score.is_correct(example.expected, parsed)
+    return parsed, valid, correct
 
 
-def fill_turn(row: dict, example: data.Example, response: dict, mode: str | None) -> None:
-    parsed, correct = evaluate(example, response["text"])
-    usage = response["usage"]
+def fill_turn(row: dict, example: data.Example, turn: clients.Turn, mode: str | None) -> None:
+    parsed, valid, correct = evaluate(example, turn, mode)
+    usage = turn.usage
     row.update(
-        model_reported=response["model_reported"],
-        output_raw=response["text"],
+        model_reported=turn.model_reported,
+        output_raw=turn.text,
         parsed=parsed,
-        schema_valid=None,
+        schema_valid=valid,
         correct=correct,
-        finish_reason=response["finish_reason"],
-        input_tokens=usage["input"],
-        output_tokens=usage["output"],
-        reasoning_tokens=usage["reasoning"],
-        cached_tokens=usage["cached"],
-        latency_ms=response["latency_ms"],
+        finish_reason=turn.finish_reason,
+        input_tokens=usage.input,
+        output_tokens=usage.output,
+        reasoning_tokens=usage.reasoning,
+        cached_tokens=usage.cached,
+        latency_ms=turn.latency_ms,
     )
 
 
@@ -94,14 +111,16 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def default_out(args: argparse.Namespace, version: str) -> str:
+    if args.mode:
+        return f"results/04-{args.mode}-{args.model}.jsonl"
     return f"results/03-{version}-{args.model}.jsonl"
 
 
 def main(argv: list[str] | None = None) -> None:
     load_dotenv()
     args = parse_args(argv)
-    if args.mode == "B" or args.tools is not None:
-        raise SystemExit("режими схеми та інструментів з'являться на кроках 04–05")
+    if args.tools is not None:
+        raise SystemExit("режим інструментів з'явиться на кроці 05")
     spec, prompt = models.get(args.model), prompts.load_prompt(args.prompt)
     examples = data.load_jsonl(args.data)
     ids = args.ids.split(",") if args.ids else None
@@ -139,8 +158,10 @@ def main(argv: list[str] | None = None) -> None:
             tags=example.tags,
             attempt=attempts[example.id] + 1,
         )
+        use_schema = schema.StorageLabel if args.mode == "B" else None
         result, error = with_retries(
-            lambda: clients.chat(spec.alias, messages), attempts=max(1, args.retry_attempts)
+            lambda: clients.chat(spec.alias, messages, schema=use_schema),
+            attempts=max(1, args.retry_attempts),
         )
         row["ts"] = data.utc_now()
         if error:

@@ -34,11 +34,11 @@ def main() -> None:
     for temperature, seed in CONFIGS:
         for run_index in range(1, args.runs + 1):
             messages = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": example.input}]
-            out = clients.chat(spec.alias, messages, temperature=temperature, seed=seed)
-            raw = out["text"] or ""
+            turn = clients.chat(spec.alias, messages, temperature=temperature, seed=seed)
+            raw = turn.text or ""
             parsed = score.parse_output(raw)
             params = {**spec.params, "temperature": temperature, "seed": seed, "num_ctx": spec.num_ctx}
-            usage = out["usage"]
+            usage = turn.usage
             data.append_row(
                 args.out,
                 data.new_row(
@@ -49,7 +49,7 @@ def main() -> None:
                     alias=spec.alias,
                     api=spec.api,
                     model_requested=spec.model,
-                    model_reported=out["model_reported"],
+                    model_reported=turn.model_reported,
                     params=params,
                     mode="sampling",
                     id=example.id,
@@ -59,12 +59,12 @@ def main() -> None:
                     parsed=parsed,
                     schema_valid=parsed is not None,
                     correct=score.is_correct(example.expected, parsed),
-                    finish_reason=out["finish_reason"],
-                    input_tokens=usage["input"],
-                    output_tokens=usage["output"],
-                    reasoning_tokens=usage["reasoning"],
-                    cached_tokens=usage["cached"],
-                    latency_ms=out["latency_ms"],
+                    finish_reason=turn.finish_reason,
+                    input_tokens=usage.input,
+                    output_tokens=usage.output,
+                    reasoning_tokens=usage.reasoning,
+                    cached_tokens=usage.cached,
+                    latency_ms=turn.latency_ms,
                     attempt=1,
                     concurrency=1,
                     run_index=run_index,
