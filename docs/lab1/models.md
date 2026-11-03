@@ -19,10 +19,10 @@
 - Дані й ціна: локально, API-ціна `$0 / $0`; навчання на введених даних — ні.
 - Джерело: [Ollama: qwen3](https://ollama.com/library/qwen3) (звернення 2026-10-27).
 
-## `gemini` — Gemini 3.8 Flash
+## `gemini` / `gemini-native` — Gemini 3.8 Flash
 
 - Тип і роль: закрита хмарна модель, друга умова експерименту на зафіксованій підмножині `q15`.
-- ID у реєстрі: `gemini-3.8-flash`; OpenAI-compatible endpoint Gemini API; контекст до 1 048 576 вхідних і 65 536 вихідних токенів.
+- ID у реєстрі: `gemini-3.8-flash`; `gemini` використовує OpenAI-compatible endpoint, а `gemini-native` — `client.models.generate_content`; контекст до 1 048 576 вхідних і 65 536 вихідних токенів.
 - Параметри кроку 03: `reasoning_effort=low`; модель підтримує thinking `low`, `medium`, `high`, structured outputs і function calling.
 - Ціна до 2026-12-31: `$0.75 / $3.75` на платному рівні; free tier — без оплати. На безкоштовному рівні вміст може використовуватися для поліпшення продуктів, тому надсилаються лише синтетичні дані.
 - Джерела: [картка Gemini 3.8 Flash](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash), [ціни Gemini API](https://ai.google.dev/gemini-api/docs/pricing) (ціни зафіксовано 2026-10-10, перевірено 2026-10-27).
