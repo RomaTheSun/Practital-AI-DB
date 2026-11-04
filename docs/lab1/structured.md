@@ -4,7 +4,7 @@
 <!-- report:begin structured -->
 | файл | api | режим | n | валідні | правильні | валідно, але хибно | finish_reason | вихідних токенів (сер.) | помилки |
 |---|---|---|---|---|---|---|---|---|---|
-| 04-A-gemini-native.jsonl | gemini_native | A | 1 | 1/1 | 1/1 | 0/1 | stop 1 | 33 | rate_limit 1, server 13 |
+| 04-A-gemini-native.jsonl | gemini_native | A | 1 | 1/1 | 1/1 | 0/1 | stop 1 | 33 | server 19 |
 | 04-A-local.jsonl | openai_chat | A | 25 | 25/25 | 24/25 | 1/25 | stop 25 | 833 | 0 |
 | 04-B-gemini-native.jsonl | gemini_native | B | 0 | — | — | — |  | — | rate_limit 1 |
 | 04-B-local.jsonl | openai_chat | B | 25 | 25/25 | 24/25 | 1/25 | stop 25 | 830 | 0 |
