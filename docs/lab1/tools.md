@@ -9,12 +9,18 @@
 ## З інструментами і без
 
 <!-- report:begin tools -->
-_Немає результатів — запустіть прогін._
+| файл | інструменти | n | правильні | потрібні інструменти викликано | валідні аргументи | кроків (сер.) | причини зупинки | збої |
+|---|---|---|---|---|---|---|---|---|
+| 05-t1-local-notools.jsonl | ні | 8 | 4/8 | 0/8 | — | 1.0 | final 8 | — |
+| 05-t1-local-tools.jsonl | так | 8 | 8/8 | 7/8 | 9/9 | 1.9 | final 8 | — |
 <!-- report:end -->
 
 ## Висновок
 
-Буде дописано після локального та хмарного прогонів із посиланнями на рядки трас.
+- На локальній `qwen3:4b` інструменти підняли точність із 4/8 до 8/8. Без довідників модель у всіх восьми відповідях обрала `postgresql`; це випадково збіглося з чотирма expected, але провалило `mongodb`, `redis` і `neo4j` ([траса без tools, рядки 1–8](https://github.com/RomaTheSun/Practital-AI-DB/blob/b19db3ca37b7acbd2c54438c210e34f71d0d8e72/results/traces/2026-11-04_t1_local_notools.jsonl#L1-L8)).
+- З інструментами модель коректно виконала 9 викликів із 9 валідними аргументами. У двох конфліктних кейсах обидва довідники викликано паралельно: `k05` обрав ACID-вимогу замість документного профілю ([рядки 9–11](https://github.com/RomaTheSun/Practital-AI-DB/blob/b19db3ca37b7acbd2c54438c210e34f71d0d8e72/results/traces/2026-11-04_t1_local_tools.jsonl#L9-L11)), а `k06` — графові обходи замість TTL/key-value ([рядки 12–14](https://github.com/RomaTheSun/Practital-AI-DB/blob/b19db3ca37b7acbd2c54438c210e34f71d0d8e72/results/traces/2026-11-04_t1_local_tools.jsonl#L12-L14)).
+- Відсутній `W-999` було перевірено інструментом і оброблено через `found: false` ([рядки 15–16](https://github.com/RomaTheSun/Practital-AI-DB/blob/b19db3ca37b7acbd2c54438c210e34f71d0d8e72/results/traces/2026-11-04_t1_local_tools.jsonl#L15-L16)). Для некоректного `W-XYZ` модель одразу застосувала fallback і не викликала інструмент ([рядок 17](https://github.com/RomaTheSun/Practital-AI-DB/blob/b19db3ca37b7acbd2c54438c210e34f71d0d8e72/results/traces/2026-11-04_t1_local_tools.jsonl#L17)); тому покриття потрібних tools становить 7/8, а `tool_error` підтверджено офлайн-тестом, не живою трасою.
+- Усі 16 локальних кейсів завершилися `final`; середня кількість кроків — 1,9 з tools і 1,0 без. Хмарна пара прогонів ще потрібна для вимоги про дві моделі.
 
 ## Чому це може не відтворитися
 
