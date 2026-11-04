@@ -10,7 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import ValidationError
 
-from bench import clients, data, models, prompts, schema, score
+from bench import agent_loop, clients, data, models, prompts, schema, score
 
 RETRYABLE = {"rate_limit", "server", "timeout"}
 
@@ -111,16 +111,39 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def default_out(args: argparse.Namespace, version: str) -> str:
+    if args.tools is not None:
+        suffix = "notools" if args.tools == "none" else "tools"
+        return f"results/05-{version}-{args.model}-{suffix}.jsonl"
     if args.mode:
         return f"results/04-{args.mode}-{args.model}.jsonl"
     return f"results/03-{version}-{args.model}.jsonl"
 
 
+def fill_agent(row: dict, example: data.Example, result: agent_loop.AgentResult, latency_ms: int) -> None:
+    """Поля результату кроку 05: суми циклу, фінальна відповідь і збої."""
+    parsed = score.parse_output(result.final_text or "")
+    row.update(
+        model_reported=None,
+        output_raw=result.final_text,
+        parsed=parsed,
+        schema_valid=None,
+        correct=parsed is not None and score.is_correct(example.expected, parsed),
+        finish_reason=result.stop_reason,
+        input_tokens=result.usage_total.input,
+        output_tokens=result.usage_total.output,
+        reasoning_tokens=result.usage_total.reasoning,
+        cached_tokens=result.usage_total.cached,
+        latency_ms=latency_ms,
+        stop_reason=result.stop_reason,
+        steps=result.steps,
+        failures=result.failures,
+        tools_called=result.tools_called,
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     load_dotenv()
     args = parse_args(argv)
-    if args.tools is not None:
-        raise SystemExit("режим інструментів з'явиться на кроці 05")
     spec, prompt = models.get(args.model), prompts.load_prompt(args.prompt)
     examples = data.load_jsonl(args.data)
     ids = args.ids.split(",") if args.ids else None
@@ -134,7 +157,12 @@ def main(argv: list[str] | None = None) -> None:
     selected = data.select(examples, split=args.split, tag=args.tag, ids=ids, limit=args.limit)
     todo = [example for example in selected if not (args.resume and example.id in done)]
     dev = data.select(examples, split="dev")
-    run_id = args.run_id or f"{datetime.now(timezone.utc):%Y-%m-%dT%H-%MZ}_{prompt.version}_{args.model}"
+    tool_names = [] if args.tools in (None, "none") else args.tools.split(",")
+    tool_suffix = "_notools" if args.tools == "none" else "_tools" if args.tools else ""
+    run_id = args.run_id or (
+        f"{datetime.now(timezone.utc):%Y-%m-%dT%H-%MZ}_{prompt.version}_{args.model}{tool_suffix}"
+    )
+    trace_path = out.parent / "traces" / f"{run_id}.jsonl"
     common = dict(
         run_id=run_id,
         git_sha=data.git_sha(),
@@ -148,6 +176,8 @@ def main(argv: list[str] | None = None) -> None:
         mode=args.mode or "A",
         concurrency=1,
     )
+    if args.tools is not None:
+        common["tools_enabled"] = bool(tool_names)
     print(f"{run_id}: {len(todo)} прикладів → {out}")
     for example in todo:
         messages = prompts.render(prompt, example, dev)
@@ -158,16 +188,38 @@ def main(argv: list[str] | None = None) -> None:
             tags=example.tags,
             attempt=attempts[example.id] + 1,
         )
-        use_schema = schema.StorageLabel if args.mode == "B" else None
-        result, error = with_retries(
-            lambda: clients.chat(spec.alias, messages, schema=use_schema),
-            attempts=max(1, args.retry_attempts),
-        )
+        started = time.perf_counter()
+        if args.tools is not None:
+            result, error = with_retries(
+                lambda: agent_loop.run_agent(
+                    spec.alias,
+                    messages,
+                    tool_names,
+                    run_id=run_id,
+                    case_id=example.id,
+                    trace_path=str(trace_path),
+                ),
+                attempts=max(1, args.retry_attempts),
+            )
+        else:
+            use_schema = schema.StorageLabel if args.mode == "B" else None
+            result, error = with_retries(
+                lambda: clients.chat(spec.alias, messages, schema=use_schema),
+                attempts=max(1, args.retry_attempts),
+            )
         row["ts"] = data.utc_now()
         if error:
             row.update(error_type=error[0], error=error[1])
         else:
-            fill_turn(row, example, result, args.mode)
+            if args.tools is not None:
+                fill_agent(
+                    row,
+                    example,
+                    result,
+                    round((time.perf_counter() - started) * 1000),
+                )
+            else:
+                fill_turn(row, example, result, args.mode)
         data.append_row(out, row)
         attempts[example.id] += 1
         print(f"  {example.id}: {row['error_type'] or ('правильно' if row['correct'] else 'хибно')}")

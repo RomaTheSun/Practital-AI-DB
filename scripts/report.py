@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from bench import models
+from bench.tools import TOOLS
 from bench.score import norm, wilson_ci
 
 NO_DATA = "_Немає результатів — запустіть прогін._"
@@ -243,6 +244,52 @@ def block_structured(_prices: dict) -> str:
     return md_table(headers, table) if table else NO_DATA
 
 
+def block_tools(_prices: dict) -> str:
+    table = []
+    for name, rows in by_file(load_rows("results/05-*.jsonl")).items():
+        ok = list(latest_ok(rows).values())
+        n = len(ok)
+        right_tool = sum(
+            set(tag for tag in row["tags"] if tag in TOOLS) <= set(row["tools_called"])
+            for row in ok
+        )
+        calls = sum(len(row["tools_called"]) for row in ok)
+        bad_args = sum(row["failures"].count("bad_args") for row in ok)
+        stops = ", ".join(
+            f"{reason} {count}"
+            for reason, count in sorted(Counter(row["stop_reason"] for row in ok).items())
+        )
+        failures = ", ".join(
+            f"{failure} {count}"
+            for failure, count in sorted(
+                Counter(failure for row in ok for failure in row["failures"]).items()
+            )
+        ) or "—"
+        table.append([
+            name,
+            "так" if ok and ok[0]["tools_enabled"] else "ні",
+            n,
+            frac(sum(bool(row["correct"]) for row in ok), n),
+            frac(right_tool, n),
+            frac(calls - bad_args, calls),
+            f"{statistics.mean(row['steps'] for row in ok):.1f}" if ok else "—",
+            stops,
+            failures,
+        ])
+    headers = [
+        "файл",
+        "інструменти",
+        "n",
+        "правильні",
+        "потрібні інструменти викликано",
+        "валідні аргументи",
+        "кроків (сер.)",
+        "причини зупинки",
+        "збої",
+    ]
+    return md_table(headers, table) if table else NO_DATA
+
+
 BLOCKS = {
     "tokens": ("docs/lab1/basics.md", block_tokens),
     "sampling": ("docs/lab1/basics.md", block_sampling),
@@ -251,6 +298,7 @@ BLOCKS = {
     "injection": ("docs/lab1/prompts.md", block_injection),
     "flips": ("docs/lab1/prompts.md", block_flips),
     "structured": ("docs/lab1/structured.md", block_structured),
+    "tools": ("docs/lab1/tools.md", block_tools),
 }
 
 

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from bench import clients, run
+from bench import agent_loop, clients, run
 
 PROMPT = "version: v0\n\n## system\nТест.\n\n## user\n<<input>>\n"
 
@@ -119,3 +119,35 @@ def test_modes_a_and_b_validate_same_schema(tmp_path, monkeypatch):
         assert row["schema_valid"] is True
         assert row["parsed"] == {"label": "postgresql"}
         assert row["correct"] is True
+
+
+def test_tool_mode_writes_agent_fields_and_trace_path(tmp_path, monkeypatch):
+    data_path, prompt_path = make_files(tmp_path)
+    captured = {}
+
+    def fake_agent(alias, messages, tool_names, **kwargs):
+        captured.update(kwargs)
+        return agent_loop.AgentResult(
+            final_text='{"label":"postgresql"}',
+            stop_reason="final",
+            steps=2,
+            usage_total=clients.Usage(input=20, output=4, reasoning=1, cached=0),
+            failures=[],
+            tools_called=["lookup_workload"],
+        )
+
+    monkeypatch.setattr(agent_loop, "run_agent", fake_agent)
+    out = tmp_path / "05.jsonl"
+    run.main([
+        "--prompt", prompt_path,
+        "--model", "local",
+        "--data", data_path,
+        "--ids", "t01",
+        "--tools", "lookup_workload",
+        "--run-id", "test_tools",
+        "--out", str(out),
+    ])
+    row = rows(out)[0]
+    assert row["tools_enabled"] is True and row["tools_called"] == ["lookup_workload"]
+    assert row["stop_reason"] == "final" and row["steps"] == 2 and row["correct"] is True
+    assert captured["trace_path"] == str(tmp_path / "traces" / "test_tools.jsonl")
