@@ -5,7 +5,7 @@
 | Пункт | Крок | Де доказ | Команда перевірки | Виконано |
 |---|---|---|---|---|
 | Г1 | 00 | `task.md`: реєстрація ще очікується; [репозиторій](https://github.com/RomaTheSun/Practital-AI-DB) | відкрити репозиторій у приватному вікні та перевірити таблицю групи | ні |
-| Г2 | 00 | `.github/workflows/tests.yml` | `uv sync --locked`; `uv run pytest` | перевірити Actions після фінального push |
+| Г2 | 00 | `.github/workflows/tests.yml`; [успішний Actions run](https://github.com/RomaTheSun/Practital-AI-DB/actions/runs/42005544607) | `uv sync --locked`; `uv run pytest` | так |
 | Г3 | 00 | `.gitignore`, `.env.example` | `git log --all --oneline -- .env`; `git check-ignore .env` | так |
 | Г4 | 06 | цей файл починається з таблиці приймання | переглянути перший розділ | так |
 | П1 | 01 | `data/golden.jsonl`; `task.md` | `uv run python scripts/validate_golden.py` | так |
