@@ -53,6 +53,25 @@ def use_fake(monkeypatch, fake):
     return fake
 
 
+def test_native_client_has_timeout_and_no_sdk_retries(monkeypatch):
+    captured = {}
+
+    def fake_client(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(clients.genai, "Client", fake_client)
+    clients._clients.pop("gemini-native", None)
+    try:
+        clients._client(clients.models.get("gemini-native"))
+    finally:
+        clients._clients.pop("gemini-native", None)
+    options = captured["http_options"]
+    assert options.timeout == 180_000
+    assert options.retry_options.attempts == 1
+
+
 def gemini_response(*parts):
     return types.GenerateContentResponse(
         model_version="fake-gemini",

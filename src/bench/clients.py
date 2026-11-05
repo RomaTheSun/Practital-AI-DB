@@ -57,7 +57,13 @@ def _client(spec: models.ModelSpec):
         if not key:
             raise RuntimeError(f"задайте {spec.key_env} у .env")
         if spec.api == "gemini_native":
-            _clients[spec.alias] = genai.Client(api_key=key)
+            _clients[spec.alias] = genai.Client(
+                api_key=key,
+                http_options=types.HttpOptions(
+                    timeout=180_000,
+                    retry_options=types.HttpRetryOptions(attempts=1),
+                ),
+            )
         else:
             _clients[spec.alias] = OpenAI(
                 base_url=spec.base_url,
