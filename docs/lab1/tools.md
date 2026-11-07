@@ -4,7 +4,7 @@
 
 - Інструменти: `lookup_workload` повертає синтетичний профіль навантаження, `lookup_requirement` — обов'язкову вимогу. Некоректний формат коду повертається в цикл як `tool_error`, відсутній код — як `found: false`.
 - Кейси: `data/tool_cases.jsonl`, 8 шт.; очікувані інструменти записані в `tags`.
-- Промпт: `prompts/t1.md`; `max_steps` = 6, `token_budget` = 20000; моделі: локальна `qwen3:4b` і хмарна `gemini-3.8-flash`.
+- Промпт: `prompts/t1.md`; `max_steps` = 6, `token_budget` = 20000; моделі: локальна `qwen3:4b` і хмарна `gpt-6-luna` (`openai`, Chat Completions з `reasoning_effort=none`).
 
 ## З інструментами і без
 

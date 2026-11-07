@@ -161,13 +161,17 @@ def _responses_input(messages: list[dict]) -> tuple[str | None, list[dict]]:
     for message in messages:
         if message["role"] == "system":
             continue
+        if "response_output" in message:
+            # A Responses function call must be sent back verbatim before its
+            # function_call_output; otherwise the server loses the call_id.
+            input_items.extend(message["response_output"])
         if message["role"] == "tool":
             input_items.append({
                 "type": "function_call_output",
                 "call_id": message["tool_call_id"],
                 "output": message["content"],
             })
-        else:
+        elif "response_output" not in message:
             input_items.append({"role": message["role"], "content": message["content"]})
     return instructions or None, input_items
 

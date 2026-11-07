@@ -1,6 +1,6 @@
 # Картки моделей
 
-Стан джерел перевірено 2026-10-27. Ціни вказано за 1 млн токенів; локальний запуск не має API-тарифу, але споживає ресурси власного комп'ютера.
+Стан джерел перевірено 2026-11-07. Ціни вказано за 1 млн токенів; локальний запуск не має API-тарифу, але споживає ресурси власного комп'ютера.
 
 ## `local` — Qwen3 4B через Ollama
 
@@ -19,9 +19,17 @@
 - Дані й ціна: локально, API-ціна `$0 / $0`; навчання на введених даних — ні.
 - Джерело: [Ollama: qwen3](https://ollama.com/library/qwen3) (звернення 2026-10-27).
 
-## `gemini` / `gemini-native` — Gemini 3.8 Flash
+## `openai` / `openai-responses` — GPT-6 Luna
 
-- Тип і роль: закрита хмарна модель, друга умова експерименту на зафіксованій підмножині `q15`.
+- Тип і роль: закрита хмарна модель, активна друга умова експерименту на зафіксованій підмножині `q15`.
+- ID у реєстрі: `gpt-6-luna`. `openai` використовує Chat Completions з `reasoning_effort=none` (зокрема для tools), а `openai-responses` — Responses API з `reasoning_effort=low` для строгого structured output.
+- Можливості: Responses і Chat Completions; structured outputs і function calling підтримуються. Для function calling у Chat Completions документація вимагає `reasoning_effort=none`.
+- Ціна: `$0.10 / $0.50` за 1 млн вхідних / вихідних токенів; cached input — `$0.01` за 1 млн. У стенд надсилаються лише синтетичні дані; політику даних облікового запису слід перевірити перед надсиланням реальних даних.
+- Джерела: [картка GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna), [OpenAI API data controls](https://platform.openai.com/docs/guides/your-data) (перевірено 2026-11-07).
+
+## Історична умова: `gemini` / `gemini-native` — Gemini 3.8 Flash
+
+- Тип і роль: попередня хмарна умова на `q15`; її сирі результати лишено для відтворюваності, але нові прогони виконуються через GPT-6 Luna.
 - ID у реєстрі: `gemini-3.8-flash`; `gemini` використовує OpenAI-compatible endpoint, а `gemini-native` — `client.models.generate_content`; контекст до 1 048 576 вхідних і 65 536 вихідних токенів.
 - Параметри кроку 03: `reasoning_effort=low`; модель підтримує thinking `low`, `medium`, `high`, structured outputs і function calling.
 - Ціна до 2026-12-31: `$0.75 / $3.75` на платному рівні; free tier — без оплати. На безкоштовному рівні вміст може використовуватися для поліпшення продуктів, тому надсилаються лише синтетичні дані.

@@ -143,6 +143,19 @@ def test_responses_api_maps_function_calls(monkeypatch):
     assert turn.tool_calls[0].id == "fc1" and turn.tool_calls[0].arguments == {"id": "A-1"}
 
 
+def test_responses_api_keeps_function_call_before_tool_output():
+    _, items = clients._responses_input([
+        {"role": "assistant", "response_output": [
+            {"type": "function_call", "call_id": "fc1", "name": "lookup", "arguments": "{}"}
+        ]},
+        {"role": "tool", "tool_call_id": "fc1", "name": "lookup", "content": "ok"},
+    ])
+    assert items == [
+        {"type": "function_call", "call_id": "fc1", "name": "lookup", "arguments": "{}"},
+        {"type": "function_call_output", "call_id": "fc1", "output": "ok"},
+    ]
+
+
 def gemini_response(*parts):
     return types.GenerateContentResponse(
         model_version="fake-gemini",
