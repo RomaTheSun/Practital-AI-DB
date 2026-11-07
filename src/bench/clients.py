@@ -69,7 +69,7 @@ def _client(spec: models.ModelSpec):
                 base_url=spec.base_url,
                 api_key=key,
                 max_retries=0,
-                timeout=900.0,
+                timeout=180.0,
             )
     return _clients[spec.alias]
 

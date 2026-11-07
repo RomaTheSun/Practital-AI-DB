@@ -72,6 +72,23 @@ def test_native_client_has_timeout_and_no_sdk_retries(monkeypatch):
     assert options.retry_options.attempts == 1
 
 
+def test_openai_client_has_timeout_and_no_sdk_retries(monkeypatch):
+    captured = {}
+
+    def fake_client(**kwargs):
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(clients, "OpenAI", fake_client)
+    clients._clients.pop("local", None)
+    try:
+        clients._client(clients.models.get("local"))
+    finally:
+        clients._clients.pop("local", None)
+    assert captured["timeout"] == 180.0
+    assert captured["max_retries"] == 0
+
+
 def gemini_response(*parts):
     return types.GenerateContentResponse(
         model_version="fake-gemini",
