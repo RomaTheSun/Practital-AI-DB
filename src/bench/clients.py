@@ -154,6 +154,92 @@ def _openai_chat(spec, messages, tools, schema, params) -> Turn:
     )
 
 
+def _responses_input(messages: list[dict]) -> tuple[str | None, list[dict]]:
+    """Історія OpenAI-style → параметри Responses API для текстових прогонів."""
+    instructions = "\n\n".join(message["content"] for message in messages if message["role"] == "system")
+    input_items = []
+    for message in messages:
+        if message["role"] == "system":
+            continue
+        if message["role"] == "tool":
+            input_items.append({
+                "type": "function_call_output",
+                "call_id": message["tool_call_id"],
+                "output": message["content"],
+            })
+        else:
+            input_items.append({"role": message["role"], "content": message["content"]})
+    return instructions or None, input_items
+
+
+def _responses_tools(tools: list[dict] | None) -> list[dict] | None:
+    if not tools:
+        return None
+    return [
+        {
+            "type": "function",
+            "name": tool["function"]["name"],
+            "description": tool["function"]["description"],
+            "parameters": tool["function"]["parameters"],
+            "strict": tool["function"].get("strict", True),
+        }
+        for tool in tools
+    ]
+
+
+def _responses_chat(spec, messages, tools, schema, params) -> Turn:
+    """Один крок через OpenAI Responses API, зведений до спільного Turn."""
+    instructions, input_items = _responses_input(messages)
+    kwargs = {
+        "model": spec.model,
+        "input": input_items,
+        "instructions": instructions,
+        "max_output_tokens": params.get("max_tokens"),
+        "reasoning": {"effort": params["reasoning_effort"]} if "reasoning_effort" in params else None,
+        "tools": _responses_tools(tools),
+    }
+    if schema is not None:
+        kwargs["text"] = {
+            "format": {
+                "type": "json_schema",
+                "name": schema.__name__,
+                "schema": to_strict_schema(schema),
+                "strict": True,
+            }
+        }
+    kwargs = {name: value for name, value in kwargs.items() if value is not None}
+    start = time.perf_counter()
+    response = _client(spec).responses.create(**kwargs)
+    latency_ms = round((time.perf_counter() - start) * 1000)
+    output = getattr(response, "output", []) or []
+    calls = [
+        _tool_call(item.call_id, item.name, item.arguments)
+        for item in output
+        if getattr(item, "type", None) == "function_call"
+    ]
+    usage_raw = getattr(response, "usage", None)
+    usage = Usage(
+        input=getattr(usage_raw, "input_tokens", None),
+        output=getattr(usage_raw, "output_tokens", None),
+        reasoning=getattr(getattr(usage_raw, "output_tokens_details", None), "reasoning_tokens", None),
+        cached=getattr(getattr(usage_raw, "input_tokens_details", None), "cached_tokens", None),
+    )
+    return Turn(
+        getattr(response, "output_text", None),
+        None,
+        None,
+        calls,
+        usage,
+        "tool_calls" if calls else (getattr(response, "status", None) or "stop"),
+        latency_ms,
+        getattr(response, "model", None),
+        raw_assistant_message={"role": "assistant", "response_output": [
+            item.model_dump(exclude_none=True) if hasattr(item, "model_dump") else item
+            for item in output
+        ]},
+    )
+
+
 def _to_gemini(messages: list[dict]) -> tuple[str | None, list[types.Content]]:
     """Історія OpenAI → (system_instruction, contents) для generate_content."""
     system, contents = None, []
@@ -271,7 +357,10 @@ def chat(
     merged = {key: value for key, value in {**spec.params, **params}.items() if value is not None}
     if spec.num_ctx is not None:
         merged.setdefault("num_ctx", spec.num_ctx)
-    call = _gemini_chat if spec.api == "gemini_native" else _openai_chat
+    call = {
+        "gemini_native": _gemini_chat,
+        "openai_responses": _responses_chat,
+    }.get(spec.api, _openai_chat)
     turn = call(spec, messages, tools, schema, merged)
     if schema is not None:
         try:

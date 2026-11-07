@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 from google.genai import types
 from openai.types.chat import ChatCompletion
@@ -87,6 +88,59 @@ def test_openai_client_has_timeout_and_no_sdk_retries(monkeypatch):
         clients._clients.pop("local", None)
     assert captured["timeout"] == 180.0
     assert captured["max_retries"] == 0
+
+
+def test_responses_api_maps_schema_usage_and_text(monkeypatch):
+    response = SimpleNamespace(
+        output_text='{"label":"redis"}',
+        output=[],
+        status="completed",
+        model="gpt-6-luna",
+        usage=SimpleNamespace(
+            input_tokens=12,
+            output_tokens=7,
+            input_tokens_details=SimpleNamespace(cached_tokens=3),
+            output_tokens_details=SimpleNamespace(reasoning_tokens=2),
+        ),
+    )
+
+    class FakeResponses:
+        def __init__(self):
+            self.requests = []
+
+        def create(self, **kwargs):
+            self.requests.append(kwargs)
+            return response
+
+    fake = SimpleNamespace(responses=FakeResponses())
+    use_fake(monkeypatch, fake)
+    turn = clients.chat(
+        "openai-responses",
+        [{"role": "system", "content": "s"}, {"role": "user", "content": "u"}],
+        schema=StorageLabel,
+    )
+    request = fake.responses.requests[0]
+    assert request["reasoning"] == {"effort": "low"}
+    assert request["text"]["format"]["strict"] is True
+    assert request["instructions"] == "s" and request["input"] == [{"role": "user", "content": "u"}]
+    assert turn.schema_valid is True and turn.parsed.label == "redis"
+    assert (turn.usage.input, turn.usage.output, turn.usage.reasoning, turn.usage.cached) == (12, 7, 2, 3)
+
+
+def test_responses_api_maps_function_calls(monkeypatch):
+    call = SimpleNamespace(type="function_call", call_id="fc1", name="lookup", arguments='{"id":"A-1"}')
+    response = SimpleNamespace(
+        output_text="",
+        output=[call],
+        status="completed",
+        model="gpt-6-luna",
+        usage=None,
+    )
+    fake = SimpleNamespace(responses=SimpleNamespace(create=lambda **kwargs: response))
+    use_fake(monkeypatch, fake)
+    turn = clients.chat("openai-responses", [{"role": "user", "content": "u"}])
+    assert turn.finish_reason == "tool_calls"
+    assert turn.tool_calls[0].id == "fc1" and turn.tool_calls[0].arguments == {"id": "A-1"}
 
 
 def gemini_response(*parts):

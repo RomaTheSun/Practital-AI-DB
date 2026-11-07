@@ -29,6 +29,13 @@ GEMINI_PRICE = dict(
     price_date="2026-10-10",
 )
 
+OPENAI_LUNA_PRICE = dict(
+    price_in=0.10,
+    price_out=0.50,
+    price_src="https://developers.openai.com/api/docs/models/gpt-6-luna",
+    price_date="2026-11-07",
+)
+
 
 MODELS: dict[str, ModelSpec] = {
     "local": ModelSpec(
@@ -45,6 +52,30 @@ MODELS: dict[str, ModelSpec] = {
         price_date="2026-10-27",
         free_tier=True,
         trains_on_data=False,
+    ),
+    "openai": ModelSpec(
+        alias="openai",
+        api="openai_chat",
+        model="gpt-6-luna",
+        base_url=None,
+        key_env="OPENAI_API_KEY",
+        params={"reasoning_effort": "none"},
+        caps={"tools": True, "json_schema": True, "reasoning_control": True},
+        free_tier=False,
+        trains_on_data=None,
+        **OPENAI_LUNA_PRICE,
+    ),
+    "openai-responses": ModelSpec(
+        alias="openai-responses",
+        api="openai_responses",
+        model="gpt-6-luna",
+        base_url=None,
+        key_env="OPENAI_API_KEY",
+        params={"reasoning_effort": "low"},
+        caps={"tools": True, "json_schema": True, "reasoning_control": True},
+        free_tier=False,
+        trains_on_data=None,
+        **OPENAI_LUNA_PRICE,
     ),
     "gemini": ModelSpec(
         alias="gemini",
