@@ -12,11 +12,11 @@
 | П2 | 01 | `task.md`; `models.md`; `chat-comparison.md`; `chat/` | `git ls-files docs/lab1/chat` | так |
 | П3 | 02 | `results/02-tokens.jsonl`; `basics.md` | `uv run python scripts/report.py tokens` | так |
 | П4 | 02 | `results/02-sampling.jsonl`; `results/02-reasoning.jsonl`; `basics.md` | `uv run python scripts/report.py sampling reasoning` | так |
-| П5 | 03 | `prompts/`; `results/03-*.jsonl`; активний хмарний прогін — OpenAI `gpt-6-luna` | порахувати успішні рядки `03-v*-openai.jsonl` | ні — завершено `v0`–`v2`, `v4` очікує скидання добової квоти |
+| П5 | 03 | `prompts/`; `results/03-*.jsonl`; OpenAI `gpt-6-luna` має по 15/15 у `v0`–`v4` | `uv run python scripts/report.py ablation` | так |
 | П6 | 03 | `prompts.md`, блок `ablation` | `uv run python scripts/report.py`; `git diff --exit-code docs/lab1` | так |
 | П7 | 03 | `prompts.md`, «Хибні відповіді» та «Ін'єкції» | переглянути 6 permalink-посилань | так |
 | П8 | 04 | `src/bench/clients.py`; `results/04-*.jsonl`; `tests/test_clients.py` | `uv run pytest tests/test_clients.py -v` | так |
-| П9 | 04 | `structured.md`; локальна A/B завершена, OpenAI A/B запланована | `uv run python scripts/report.py structured` | ні — очікує скидання добової квоти OpenAI |
+| П9 | 04 | `structured.md`; OpenAI A має 15/15, B — 8/15 | `uv run python scripts/report.py structured` | ні — бракує 7 OpenAI B-відповідей |
 | П10 | 05 | `tests/test_agent_loop.py` | `uv run pytest tests/test_agent_loop.py -v` | так |
 | П11 | 05 | `data/tool_cases.jsonl`; `results/05-*.jsonl`; `results/traces/`; `tools.md` | `uv run python scripts/validate_golden.py --tools data/tool_cases.jsonl` | ні — бракує хмарної пари |
 | П12 | 06 | нижче: «Рішення», «Вердикти гіпотез», «Загрози валідності» | переглянути 6 елементів рішення і таблиці | так для наявних даних |
