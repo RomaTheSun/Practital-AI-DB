@@ -16,9 +16,9 @@
 | П6 | 03 | `prompts.md`, блок `ablation` | `uv run python scripts/report.py`; `git diff --exit-code docs/lab1` | так |
 | П7 | 03 | `prompts.md`, «Хибні відповіді» та «Ін'єкції» | переглянути 6 permalink-посилань | так |
 | П8 | 04 | `src/bench/clients.py`; `results/04-*.jsonl`; `tests/test_clients.py` | `uv run pytest tests/test_clients.py -v` | так |
-| П9 | 04 | `structured.md`; OpenAI A має 15/15, B — 8/15 | `uv run python scripts/report.py structured` | ні — бракує 7 OpenAI B-відповідей |
+| П9 | 04 | `structured.md`; OpenAI та локальна моделі мають повні A/B-прогони | `uv run python scripts/report.py structured` | так |
 | П10 | 05 | `tests/test_agent_loop.py` | `uv run pytest tests/test_agent_loop.py -v` | так |
-| П11 | 05 | `data/tool_cases.jsonl`; `results/05-*.jsonl`; `results/traces/`; `tools.md` | `uv run python scripts/validate_golden.py --tools data/tool_cases.jsonl` | ні — бракує хмарної пари |
+| П11 | 05 | `data/tool_cases.jsonl`; `results/05-*.jsonl`; `results/traces/`; `tools.md` | `uv run python scripts/validate_golden.py --tools data/tool_cases.jsonl` | так |
 | П12 | 06 | нижче: «Рішення», «Вердикти гіпотез», «Загрози валідності» | переглянути 6 елементів рішення і таблиці | так для наявних даних |
 | Р1 | 01–06 | історія комітів у `data/`, `results/`, `docs/lab1/` | `git log --oneline --stat -- data results docs/lab1` | визначає викладач за знімками |
 | Р2 | 06 | `uv.lock`; кореневий `README.md` | три команди з кореневого README | так |
